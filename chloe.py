@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as pl
 from scipy.misc import imsave
 
+
 # Vectorised Linear Algebra
 # All points/vectors are n * d, where n is the count and d=3
 def vector(x, y, z):
@@ -11,17 +12,17 @@ def vector(x, y, z):
 
 def norm(x):
     """Compute the length of a vector."""
-    return np.sqrt(np.sum((i**2 for i in x[0]), axis=1))
+    return np.sqrt(np.sum(x**2, axis=1))
 
 
 def hat(x):
     """Return a unit vector in the direction of x."""
-    return [i/norm(a) for i in a[0]][:, np.newaxis]
+    return x/norm(x)[:, np.newaxis]
 
 
 def dot(a, b):
     """Compute the dot product of vector arrays a and b."""
-    return np.sum(i*j for i,j in zip(a, b))[:, np.newaxis]
+    return np.sum(a*b, axis=1)[:, np.newaxis]
 
 
 # Some geometrtic objects that we can ray trace - lets start with a sphere
@@ -37,16 +38,16 @@ class Sphere:
     def trace(self, O, D):
         """ From origin, direction --> does it hit this sphere?"""
         OP = self.P - O  # ray from origin to sphere center
-        X_component = ??? # component of op in the direction of D
+        X_component = dot(OP, D) # component of op in the direction of D
         OX = X_component * D  # turn into a vector
-        perp_dist = norm(???)  # distance from X to P
-        hit = np.where(perp_dist < self.???)[0]
+        perp_dist = norm(OX - OP)  # distance from X to P
+        hit = np.where(perp_dist < self.R)[0]
 
         # Sometimes im lazy and the origin is broadcast (1xn)
         if OP.shape[0] > 1:
             OP = OP[hit]
         # Use pythagoras to compute the hit distance
-        hit_distance = norm(OP) - np.sqrt(???**2 - perp_dist[hit]**2)
+        hit_distance = norm(OP) - np.sqrt(self.R**2 - perp_dist[hit]**2)
         return hit, hit_distance
 
 
@@ -57,7 +58,7 @@ class Viewpoint:
                            np.linspace(*screen_x))
         P = np.stack((u, v, np.ones_like(u)), axis=2)
         P = P.reshape((-1, 3))  # pixel centers
-        self.rays = hat( ??? )
+        self.rays = hat(P-eye)
         self.shape = (screen_x[-1], screen_y[-1], 3)
         self.E = eye
         self.pixels = self.rays.shape[0]
